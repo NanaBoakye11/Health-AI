@@ -34,7 +34,7 @@ async function getZipcodeFromIP(ipAddress: string): Promise<string> {
     console.error('StackAPI Key is missing.');
     return 'unknown'
   }
-  const url = `http://api.ipstack.com/${ipAddress}?access_key=${ipStackApiKey}&&hostname=1`;
+  const url = `http://api.ipstack.com/${ipAddress}?access_key=${ipStackApiKey}&fields=zip`;
   try {
     const response = await fetch(url);
     const data = await response.json() as ApiResponse;
