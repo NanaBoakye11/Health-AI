@@ -8,6 +8,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+
 // async function testGeolocationAPI(ipAddress) {
 //   const ipStackApiKey = process.env.IPSTACK_API_KEY; // Replace with your actual API key
 //   const url = `http://api.ipstack.com/${ipAddress}?access_key=${ipStackApiKey}`;
@@ -23,6 +24,10 @@ const openai = new OpenAI({
 
 // testGeolocationAPI('8.8.8.8');
 
+interface ApiResponse {
+  zip?: string;
+}
+
 async function getZipcodeFromIP(ipAddress: string): Promise<string> {
   const ipStackApiKey = process.env.IPSTACK_API_KEY;
   if(!ipStackApiKey) {
@@ -32,7 +37,7 @@ async function getZipcodeFromIP(ipAddress: string): Promise<string> {
   const url = `http://api.ipstack.com/${ipAddress}?access_key=${ipStackApiKey}&&hostname=1`;
   try {
     const response = await fetch(url);
-    const data = await response.json();
+    const data = await response.json() as ApiResponse;
     if (data.zip) {
       console.log(`Zipcode for IP ${ipAddress}: ${data.zip}`);
       return data.zip;
