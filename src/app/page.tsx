@@ -1,7 +1,7 @@
 "use client"
 import React, { useState } from 'react';
 
-// Define an interface for the message object
+// Interface for the message object
 interface Message {
   sender: string;
   message: string;
@@ -11,7 +11,7 @@ export default function Home() {
   const [input, setInput] = useState('');
   // const [zipcode, setZipcode] = useState('')
   const [history, setHistory] = useState<Message[]>([]);
-  const [isProcessing, setIsProcessing] = useState<boolean>(false); // State to track processing status
+  const [isProcessing, setIsProcessing] = useState<boolean>(false); 
 
   const askMe = async () => {
     if (input.trim() === '') return;
@@ -19,7 +19,7 @@ export default function Home() {
     setHistory([...history, { sender: 'User', message: input }]);
 
     try {
-      // Make an API call to your endpoint
+      // API call to endpoint
       const response = await fetch('/api/openai', {
         method: 'POST',
         headers: {
@@ -29,18 +29,17 @@ export default function Home() {
       });
 
       const data = await response.json();
-      console.log("API Response:", data); // Debugging
+      console.log("API Response:", data); 
 
-      // Add AI's response to the history
+      //AI's response to the history
       setHistory(prev => [...prev, { sender: 'AI', message: data.response }]);
     } catch (error) {
       console.error('There was an error in the API request:', error);
     }
 
-    // Clear the input field and stop processing
+    
     setInput('');
-    // setZipcode('');
-    setIsProcessing(false); // Stop processing
+    setIsProcessing(false);
   };
 
 
@@ -63,7 +62,7 @@ export default function Home() {
       <button
         className="mt-2 px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50"
         onClick={askMe}
-        disabled={isProcessing} // Button is disabled when isProcessing is true
+        disabled={isProcessing}
       >   
         {isProcessing ? 'Processing...' : 'Ask Health AI'}
       </button>
