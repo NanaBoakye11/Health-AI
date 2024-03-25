@@ -157,7 +157,7 @@ export async function POST(request: Request) {
     const userInterests = user?.preferences.interests.join(', ');
     const userZipCode = zipcode;
 
-  let context = `Hence this is the user's information. Use this to information to answer the user's questions. Here are the information -- > The user, ${userName}, with ${userDisability}. They are located in the ZIP code ${userZipCode}. Based on this information, provide detailed, informed responses to their queries. Don't mention "based on your zipcode you provided". Just go straight to completely answering their questions fully. Provide great suggestions by doing your research and answering in detail. Please finish your by providing them a list of what they are asking for based on their location!.`;
+  let context = `Hence this is the user's information. Use this to information to answer the user's questions. Here are the information -- > The user, ${userName}, with ${userDisability}. They are located in the ZIP code ${userZipCode}. Based on this information, provide detailed responses to their queries such as phone number and address. Don't mention "based on your zipcode you provided". Just go straight to completely answering their questions fully. Provide great suggestions by doing your research and answering in detail. Please finish your by providing them a list of what they are asking for based on their location!.`;
 
   console.log('This is IPAddress '+ ipAddress);
 
