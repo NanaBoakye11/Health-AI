@@ -1,74 +1,5 @@
 "use client"
-// import React, { useState, useEffect } from 'react';
-
-// // Define an interface for the message object
-// interface Message {
-//   sender: string;
-//   message: string;
-// }
-
-// export default function Home() {
-//   const [input, setInput] = useState('');
-//   const [history, setHistory] = useState<Message[]>([]);
-//   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-//   const [userLocation, setUserLocation] = useState({ latitude: null, longitude: null });
-
-//   useEffect(() => {
-//     // Get user's location when the component mounts
-//     getUserLocation();
-//   }, []);
-
-//   const getUserLocation = () => {
-//     if ("geolocation" in navigator) {
-//       navigator.geolocation.getCurrentPosition((position) => {
-//         setUserLocation({
-//           latitude: position.coords.latitude,
-//           longitude: position.coords.longitude
-//         });
-//       }, (error) => {
-//         console.error("Error obtaining location: ", error);
-//       });
-//     } else {
-//       console.error("Geolocation is not supported by this browser.");
-//     }
-//   };
-
-//   const askMe = async () => {
-//     if (input.trim() === '') return;
-//     setIsProcessing(true); // Start processing
-//     setHistory([...history, { sender: 'User', message: input }]);
-
-//     try {
-//       // Include userLocation in the API request if needed
-//       const requestBody = {
-//         query: input,
-//         location: userLocation // This sends the user's location with the query
-//       };
-
-//       // Make an API call to your endpoint
-//       const response = await fetch('/api/openai', {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify(requestBody),
-//       });
-
-//       const data = await response.json();
-//       console.log("API Response:", data); // Debugging
-
-//       // Add AI's response to the history
-//       setHistory(prev => [...prev, { sender: 'AI', message: data.response }]);
-//     } catch (error) {
-//       console.error('There was an error in the API request:', error);
-//     }
-
-//     setInput('');
-//     setIsProcessing(false); // Stop processing
-//   };
-
-
-  import React, { useState } from 'react';
+import React, { useState } from 'react';
 
 // Define an interface for the message object
 interface Message {
@@ -133,7 +64,7 @@ export default function Home() {
         className="mt-2 px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50"
         onClick={askMe}
         disabled={isProcessing} // Button is disabled when isProcessing is true
-      >
+      >   
         {isProcessing ? 'Processing...' : 'Ask Health AI'}
       </button>
     </div>
