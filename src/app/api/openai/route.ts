@@ -142,14 +142,14 @@ async function getZipcodeFromIP(ipAddress: string): Promise<string | null> {
   
 
 export async function POST(request: Request) {
-  const ipAddress = request.headers.get('X-Forwarded-For')?.split(',').shift() || '8.8.8.8'; // Fallback IP for testing
+  const ipAddress = request.headers.get('X-Forwarded-For')?.split(',').shift() || '8.8.8.8';
     const body = await request.json();
     const userId = body.userID;
     const query = body.query;
     const zipcode = await getZipcodeFromIP(ipAddress) as string || "unknown";
     console.log("This is the Zipcode retrieved from the IpStack function " + zipcode);
 
-    const user = users.find(user => user.userID === 1); // Replace 1 with the appropriate user ID logic
+    const user = users.find(user => user.userID === 1); 
 
   
     const userName = user?.username;
@@ -157,7 +157,7 @@ export async function POST(request: Request) {
     const userInterests = user?.preferences.interests.join(', ');
     const userZipCode = zipcode;
 
-  let context = `Hence this is the user's information. Use this to information to answer the user's questions. Here are the information -- > The user, ${userName}, with ${userDisability}. They are located in the ZIP code ${userZipCode}. Based on this information, provide detailed responses to their queries such as phone number and address. Don't mention "based on your zipcode you provided". Just go straight to completely answering their questions fully. Provide great suggestions by doing your research and answering in detail. Please finish your by providing them a list of what they are asking for based on their location!.`;
+  let context = `Hence this is the user's information. Use this to information to answer the user's questions. Here are the information -- > The user, ${userName}, with ${userDisability}. They are located in the ZIP code ${userZipCode}. Based on this information, provide detailed responses to their queries such as phone number and address. Don't mention "based on your zipcode you provided". Just go straight to completely answering their questions fully. Provide great suggestions by doing your research and answering in detail. Please finish your by providing them a list of what they are asking for based on their location!. Try and keep the response up to 3 lines.`;
 
   console.log('This is IPAddress '+ ipAddress);
 
