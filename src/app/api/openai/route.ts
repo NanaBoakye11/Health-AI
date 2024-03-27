@@ -103,13 +103,13 @@ const users = [
     {
       documentID: 1,
       title: "Guide to Accessible Fitness Centers",
-      content: "Content or URL to the document...",
+      content: "",
       relatedSites: [2],
     },
     {
       documentID: 2,
       title: "Mental Health Resources",
-      content: "Content or URL to the document...",
+      content: "",
       relatedSites: [1],
     },
   ];
@@ -157,7 +157,14 @@ export async function POST(request: Request) {
     const userInterests = user?.preferences.interests.join(', ');
     const userZipCode = zipcode;
 
-  let context = `Hence this is the user's information. Use this to information to answer the user's questions. Here are the information -- > The user, ${userName}, with ${userDisability}. They are located in the ZIP code ${userZipCode}. Based on this information, provide detailed responses to their queries such as phone number and address. Don't mention "based on your zipcode you provided". Just go straight to completely answering their questions fully. Provide great suggestions by doing your research and answering in detail. Please finish your by providing them a list of what they are asking for based on their location!. Try and keep the response up to 3 lines.`;
+  let context = `You're a chatbot for disabled patients. Here's the user's name ${userName}, with this disability ${userDisability}, and is currently located in this zipcode ${userZipCode}. 
+                1. First formally greet the user by their name ${userName}. 
+                2. Then break down the user's question into pieces to fully understand their request.
+                3. Check your resources and other external resources to find relative information about the request.
+                4. If the question requires finding nearby services, use their zipcode ${userZipCode} to search for services related their question and retrieve their contact details ready to provide to the user.
+                5. In addition, compare your findings with the user's question to see if your findings align with the question.
+                6. Finally, if your comparison aligns with the user's request, provide a response to the user in 4-5 sentences.
+                If your comparison doesn't align with the question, redo the steps over until the findings align with the question before you respond`;
 
   console.log('This is IPAddress '+ ipAddress);
 
