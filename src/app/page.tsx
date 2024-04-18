@@ -9,7 +9,6 @@ interface Message {
 
 export default function Home() {
   const [input, setInput] = useState('');
-  // const [zipcode, setZipcode] = useState('')
   const [history, setHistory] = useState<Message[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false); 
   const endOfMessagesRef = useRef<null | HTMLDivElement>(null);
@@ -23,8 +22,8 @@ export default function Home() {
 
   const askMe = async () => {
     if (input.trim() === '') return;
-    setIsProcessing(true); // Start processing
-    setHistory([...history, { sender: 'User', message: input }]);
+    setIsProcessing(true); //
+    setHistory(prevHistory => [...prevHistory, { sender: 'User', message: input }]);
 
     try {
       // API call to endpoint
@@ -35,19 +34,29 @@ export default function Home() {
         },
         body: JSON.stringify({ query: input }),
       });
+      console.log("INPUT:", input); 
 
       const data = await response.json();
       console.log("API Response:", data); 
-
+      if (data.response) {
+      const aiTextResponse = data.response;
+      console.log("API Data Response:", aiTextResponse); 
       //AI's response to the history
-      setHistory(prev => [...prev, { sender: 'AI', message: data.response }]);
+      setHistory(prevHistory => [...prevHistory, { sender: 'AI', message: aiTextResponse }]);
+      } else {
+        console.error("Unexpected API response structure:", data);
+        fallbackResponse();
+      }
     } catch (error) {
       console.error('There was an error in the API request:', error);
+      fallbackResponse();
     }
-
-    
     setInput('');
     setIsProcessing(false);
+  };
+
+  const fallbackResponse = () => {
+    setHistory(prevHistory => [...prevHistory, { sender: 'AI', message: "I'm sorry, I couldn't process your request. Please rephrase your question and try again!" }]);
   };
 
 
@@ -76,7 +85,14 @@ export default function Home() {
         onClick={askMe}
         disabled={isProcessing}
       >
-        {isProcessing ? 'Processing...' : 'Ask'}
+        {isProcessing ? (
+  <div className="flex items-center justify-center space-x-2">
+    <div className="spinner-border animate-spin inline-block w-4 h-4 border-2 rounded-full" role="status">
+      <span className="visually-hidden">Loading...</span>
+    </div>
+    <div>Processing...</div>
+  </div>
+) : 'Ask'}
       </button>
     </div>
   );

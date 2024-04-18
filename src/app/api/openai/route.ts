@@ -3,22 +3,35 @@
 
 import OpenAI from "openai";
 import fetch from 'node-fetch';
+import { resolve } from "path";
 
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+interface MessageContentText {
+  text: {
+    value: string;
+  };
+}
 
 interface ApiResponse {
   zip?: string;
 }
 
+interface AssistantMessage {
+  role: string;
+  content: MessageContentText[]; // Array of MessageContentText
+}
+
+const assistant_id = 'asst_wp9RboSfahxovZhshpe0TBqN'
+
 const users = [
     {
       userID: 1,
       username: "John Doe",
-      disabilty: "Autism Spectrum Disorder",
+      disability: "Autism Spectrum Disorder",
       preferences: {
         interests: ["Health education", "Physical activities for special needs"],
         accessibilityNeeds: ["Quiet environments", "Visual schedules"],
@@ -27,7 +40,7 @@ const users = [
     {
       userID: 2,
       username: "Jane Smith",
-      disabilty: "Hearing Impairment",
+      disability: "Hearing Impairment",
       preferences: {
         interests: ["Sign language resources", "Lip reading techniques", "Nutritional advice"],
         accessibilityNeeds: ["Text-based communication", "Hearing aid compatible technology"],
@@ -36,7 +49,7 @@ const users = [
     {
       userID: 3,
       username: "Terry Johnson",
-      disabilty: "Post-Stroke Rehabilitation",
+      disability: "Post-Stroke Rehabilitation",
       preferences: {
         interests: ["Stroke recovery exercises", "Adaptive transportation options"],
         accessibilityNeeds: ["Handicap accessible facilities", "Speech therapy resources"],
@@ -45,7 +58,7 @@ const users = [
     {
       userID: 4,
       username: "Sandy Mills",
-      disabilty: "Visual Impairment",
+      disability: "Visual Impairment",
       preferences: {
         interests: ["Braille learning tools", "Stress management for the visually impaired", "Accessible public transportation"],
         accessibilityNeeds: ["Screen reader software", "Guide dog friendly spaces"],
@@ -54,7 +67,7 @@ const users = [
     {
       userID: 5,
       username: "Eric Lu",
-      disabilty: "Epilepsy",
+      disability: "Epilepsy",
       preferences: {
         interests: ["Seizure management techniques", "Epilepsy friendly fitness regimes", "Transportation safety for epilepsy"],
         accessibilityNeeds: ["Seizure alert devices", "Epilepsy support groups"],
@@ -63,7 +76,7 @@ const users = [
     {
       userID: 6,
       username: "Charles Henry",
-      disabilty: "Type 1 Diabetes",
+      disability: "Type 1 Diabetes",
       preferences: {
         interests: ["Diabetic diet plans", "Exercise for diabetes management"],
         accessibilityNeeds: ["Glucose monitoring assistance", "Insulin therapy resources"],
@@ -99,7 +112,7 @@ const users = [
   
   ];
   
-  const documents = [
+  const files = [
     {
       documentID: 1,
       title: "Guide to Accessible Fitness Centers",
@@ -141,58 +154,147 @@ async function getZipcodeFromIP(ipAddress: string): Promise<string | null> {
   }
   
 
-export async function POST(request: Request) {
+  async function handlePost(request: Request) {
+  let finalResponse = ""; 
+  const { userID, query } = await request.json();
   const ipAddress = request.headers.get('X-Forwarded-For')?.split(',').shift() || '8.8.8.8';
-    const body = await request.json();
-    const userId = body.userID;
-    const query = body.query;
-    const zipcode = await getZipcodeFromIP(ipAddress) as string || "unknown";
-    console.log("This is the Zipcode retrieved from the IpStack function " + zipcode);
+  console.log(ipAddress);
+  const zipcode = await getZipcodeFromIP(ipAddress) as string || "unknown";
+  const user = users.find(user => user.userID === 1);
 
-    const user = users.find(user => user.userID === 1); 
+  console.log("Here's the Main QUERY", query);
+  
+
+  const queryQueue = [];
+  let pushQuery = queryQueue.push(query);
+
+  console.log("HERE'S history Array   ", queryQueue);
 
   
-    const userName = user?.username;
-    const userDisability = user?.disabilty;
-    const userInterests = user?.preferences.interests.join(', ');
-    const userZipCode = zipcode;
+    if (!user) {
+      return new Response(JSON.stringify({ response: "User not found. Please login" }),{
+        headers: {'Content-Type': 'application/json'},
+      });
+    }
+  
+    // Custom instructions for the assistant
 
-  let context = `You're a chatbot for disabled patients. Here's the user's name ${userName}, with this disability ${userDisability}, and is currently located in this zipcode ${userZipCode}. 
-                1. First formally greet the user by their name ${userName}. 
-                2. Then break down the user's question into pieces to fully understand their request.
-                3. Check your resources and other external resources to find relative information about the request.
-                4. If the question requires finding nearby services, use their zipcode ${userZipCode} to search for services related their question and retrieve their contact details ready to provide to the user.
-                5. In addition, compare your findings with the user's question to see if your findings align with the question.
-                6. Finally, if your comparison aligns with the user's request, provide a response to the user in 4-5 sentences.
-                If your comparison doesn't align with the question, redo the steps over until the findings align with the question before you respond`;
+    const fileList = await openai.beta.assistants.files.list(
+      assistant_id
+    );
 
-  console.log('This is IPAddress '+ ipAddress);
+    console.log("HERE'S FILELIST   ",fileList);
 
-  const fullQuery = `${query} ${context}`;
+    console.log("Here First List ", fileList.data[0].id);
+
+    const ids = fileList.data.map(file => file.id);
+
+    console.log("HERE'S IDS  ", ids);
 
 
-  try {
-    // Call the OpenAI API
-    const chatCompletion = await openai.chat.completions.create({
-      messages: [{ role: "user", content: fullQuery }],
-      model: "gpt-3.5-turbo",
-    });
-    const aiResponse = chatCompletion.choices[0].message.content;
-    return new Response(JSON.stringify({ response: aiResponse }), {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-  } catch (error) {
-    console.error("Error:", error);
-    return new Response(JSON.stringify({ response: "An error occurred." }), {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      status: 500 // Internal Server Error
-    });
+    const instructions = `KEEP ANSWERS SHORT!! You are a compassionate and knowledgeable AI chatbot. Your name is Jefflin Bot.
+                          Your task is to research disbaled patients queries and provide them with valuable information.
+                          Please be interactive like an actual human conversation. 
+                          Hence the user's name is ${user.username}, with ${user.disability} disability, and 
+                          located in ZIP code ${zipcode}. 
+                          Response should be about 3 sentences!
+                          Your response should be detailed and efficient. Please Keep your response short and precise, this is very important
+                          Before you answer, check these files ${ids} and information like name ${user.username}, ${zipcode}, ${user.disability} for any relevant information related to thier question ${query}!
+                          If there's no relative information in the ${ids} files, remember ignore the files and answer on your own please! Check other external resources!
+                          Example: USER INPUT: 'Are there any programs or initiatives that offer job training or employment support for disabled individuals?
+                          ' AI: 'The Arc of New Jersey's Project HIRE is a supported employment program designed to connect people with disabilities to integrated employment opportunities in their community. Here's the contact information for The Arc of New Jersey. 
+                          Address: 985 Livingston Avenue
+                                  North Brunswick, NJ 08902
+                                  
+                          Phone: 732.246.2525
+                          Fax: 732.214.1834
+                          Website: info@arcnj.org
+                          '
+
+                
+                         Keep in mind this example when answering user queries!
+                         DO NOT INCLUDE REFERENCING THE FILES AND DOCUMENTS IN YOUR RESPONSE TO THE USER!
+                         DO NOT LIST or include the file source in your response!
+                         
+                          Understand their unique needs and go through these files ${ids} and information like name ${user.username}, zipcode ${zipcode}, and disability ${user.disability} for any relevant information related to thier question which is, ${query}!
+                          If there's no relative information in the ${ids} files, Use your own knowledgebase to answer!
+                          `;
+    
+
+    const fullQuery = `You are a great social worker.
+                        My name is ${user.username}.
+                        I have ${user.disability} disability and require ${user.preferences.accessibilityNeeds}.
+                         ${query}.
+                        I'm currently live in the zip code ${zipcode}.
+                        Can you please look within 10 miles?
+                        Please make sure that their phone numbers are verified one, and include their website.
+                        Please provide this information in a tabular format?
+                        Please indicate if a session can be booked online?
+                        Please generate a personalized  referral message as a JSON object to the second provider on the list.
+                        `
+                          
+    try {
+      // Create a thread
+      const thread = await openai.beta.threads.create({
+        messages: [
+          {
+            "role": "user",
+            "content": fullQuery
+          }
+        ]
+      });
+      console.log("THREAD: ", thread);
+      // let fullQuery = `${instructions2} ${query}`
+
+      let run = await openai.beta.threads.runs.create(
+        thread.id, 
+        {
+          assistant_id: assistant_id,
+          instructions: instructions
+        }
+      );
+      console.log("Run created: ", run.id);
+      console.log("RUN: ", run);
+      console.log("RUN FROM 1 - 3:   ", run.file_ids.slice(0, 3));
+
+
+      while (run.status !== "completed"){
+        run = await openai.beta.threads.runs.retrieve(run.thread_id, run.id);
+        console.log(`Run status: ${run.status}`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      console.log("Run completed");
+
+      
+        const messagesResponse = await openai.beta.threads.messages.list(run.thread_id);
+        const messages = messagesResponse.data;
+        console.log(messages);
+        let latest_message = messages[0];
+        if ('text' in latest_message.content[0]){
+          finalResponse = latest_message.content[0].text.value;
+          console.log(`Response: ${finalResponse}`);
+        } else {
+          console.log("The latest message does not have text content.");
+        }
+      } catch (error) {
+        console.error("Error creating or querying assistant:", error);
+    finalResponse = "An error occurred while processing your request. Please rephrase your question and try again!";
+      }
+
+      // }
+      console.log("Final Response before sending to FrontEnd ", finalResponse);
+      // Return response
+      return new Response(JSON.stringify({ response: finalResponse }), {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+    } 
+  export async function POST(request: Request) {
+    return await handlePost(request);
   }
-}
+
+
 
 
 
