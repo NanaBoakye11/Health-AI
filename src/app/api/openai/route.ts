@@ -26,6 +26,7 @@ interface AssistantMessage {
 }
 
 const assistant_id = 'asst_wp9RboSfahxovZhshpe0TBqN'
+const fileAttached = 'file-2vsKouv1X3hImBW5rvzeNOeK'
 
 const users = [
     {
@@ -177,47 +178,15 @@ async function getZipcodeFromIP(ipAddress: string): Promise<string | null> {
       });
     }
   
-    // Custom instructions for the assistant
 
-    const fileList = await openai.beta.assistants.files.list(
-      assistant_id
-    );
-
-    console.log("HERE'S FILELIST   ",fileList);
-
-    console.log("Here First List ", fileList.data[0].id);
-
-    const ids = fileList.data.map(file => file.id);
-
-    console.log("HERE'S IDS  ", ids);
-
-
-    const instructions = `KEEP ANSWERS SHORT!! You are a compassionate and knowledgeable AI chatbot. Your name is Jefflin Bot.
-                          Your task is to research disbaled patients queries and provide them with valuable information.
-                          Please be interactive like an actual human conversation. 
-                          Hence the user's name is ${user.username}, with ${user.disability} disability, and 
-                          located in ZIP code ${zipcode}. 
-                          Response should be about 3 sentences!
-                          Your response should be detailed and efficient. Please Keep your response short and precise, this is very important
-                          Before you answer, check these files ${ids} and information like name ${user.username}, ${zipcode}, ${user.disability} for any relevant information related to thier question ${query}!
-                          If there's no relative information in the ${ids} files, remember ignore the files and answer on your own please! Check other external resources!
-                          Example: USER INPUT: 'Are there any programs or initiatives that offer job training or employment support for disabled individuals?
-                          ' AI: 'The Arc of New Jersey's Project HIRE is a supported employment program designed to connect people with disabilities to integrated employment opportunities in their community. Here's the contact information for The Arc of New Jersey. 
-                          Address: 985 Livingston Avenue
-                                  North Brunswick, NJ 08902
-                                  
-                          Phone: 732.246.2525
-                          Fax: 732.214.1834
-                          Website: info@arcnj.org
-                          '
-
-                
-                         Keep in mind this example when answering user queries!
-                         DO NOT INCLUDE REFERENCING THE FILES AND DOCUMENTS IN YOUR RESPONSE TO THE USER!
-                         DO NOT LIST or include the file source in your response!
-                         
-                          Understand their unique needs and go through these files ${ids} and information like name ${user.username}, zipcode ${zipcode}, and disability ${user.disability} for any relevant information related to thier question which is, ${query}!
-                          If there's no relative information in the ${ids} files, Use your own knowledgebase to answer!
+    const instructions = `
+                        My name is ${user.username}.
+                        I have ${user.disability} disability.  
+                        This is my zipcode ${zipcode}.
+                        You are a compassionate and knowledgeable AI chatbot designed to support disabled patients. 
+                        Your tone should be friendly and helpful. Please Keep your answers short!
+                        Please arrange answer in bulletin points!
+                        Use the information contained in the provided files ${fileAttached} to answer questions about disabled patients such as recommendations, services, transportation, etc.
                           `;
     
 
@@ -227,6 +196,7 @@ async function getZipcodeFromIP(ipAddress: string): Promise<string | null> {
                          ${query}.
                         I'm currently live in the zip code ${zipcode}.
                         Can you please look within 10 miles?
+                        Check this file ${fileAttached} for any relavant information!!
                         Please make sure that their phone numbers are verified one, and include their website.
                         Please provide this information in a tabular format?
                         Please indicate if a session can be booked online?
@@ -238,25 +208,24 @@ async function getZipcodeFromIP(ipAddress: string): Promise<string | null> {
       const thread = await openai.beta.threads.create({
         messages: [
           {
-            "role": "user",
-            "content": fullQuery
+            role: "user",
+            content: query,
+            attachments: [{file_id: fileAttached, tools: [{ type: "file_search" }] }]
           }
         ]
       });
+
       console.log("THREAD: ", thread);
-      // let fullQuery = `${instructions2} ${query}`
 
       let run = await openai.beta.threads.runs.create(
         thread.id, 
         {
           assistant_id: assistant_id,
-          instructions: instructions
+          model: "gpt-4-turbo",
+          instructions: instructions,
         }
       );
-      console.log("Run created: ", run.id);
-      console.log("RUN: ", run);
-      console.log("RUN FROM 1 - 3:   ", run.file_ids.slice(0, 3));
-
+    
 
       while (run.status !== "completed"){
         run = await openai.beta.threads.runs.retrieve(run.thread_id, run.id);
@@ -313,5 +282,21 @@ async function getZipcodeFromIP(ipAddress: string): Promise<string | null> {
 
 
 
+//   KEEP ANSWERS SHORT!! You are a compassionate and knowledgeable AI chatbot. Your name is Jefflin Bot.
+//   Your task is to research disbaled patients queries and provide them with valuable information.
+//   Please be interactive like an actual human conversation. 
+//   Hence the user's name is ${user.username}, with ${user.disability} disability, and 
+//   located in ZIP code ${zipcode}. 
+//   Response should be about 3 sentences!
+//   Your response should be detailed and efficient. Please Keep your response short and precise, this is very important
+//   Before you answer, check these files ${ids} and information like name ${user.username}, ${zipcode}, ${user.disability} for any relevant information related to thier question ${query}!
+//   If there's no relative information in the ${ids} files, remember ignore the files and answer on your own please! Check other external resources!
+//   Example: USER INPUT: 'Are there any programs or initiatives that offer job training or employment support for disabled individuals?
 
+//  Keep in mind this example when answering user queries!
+//  DO NOT INCLUDE REFERENCING THE FILES AND DOCUMENTS IN YOUR RESPONSE TO THE USER!
+//  DO NOT LIST or include the file source in your response!
+ 
+//   Understand their unique needs and go through these files ${ids} and information like name ${user.username}, zipcode ${zipcode}, and disability ${user.disability} for any relevant information related to thier question which is, ${query}!
+//   If there's no relative information in the ${ids} files, Use your own knowledgebase to answer!
 
